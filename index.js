@@ -10,8 +10,8 @@ const containerId = 'terminal';
 document.addEventListener('DOMContentLoaded', () => {
 
     const terminalOptions = {
-        cols: 20,
-        rows: 10,
+        cols: 80,
+        rows: 32,
         /** @type import("@xterm/xterm").LogLevel */
         logLevel: 'info'
     };
@@ -21,37 +21,81 @@ document.addEventListener('DOMContentLoaded', () => {
     
     /**
      * Calculates the position of the cursor. Check if the cursor is located
-     * on the start of a row that contains wrapped content from the
-     * row above.
+     * on the start of a row but not in the first row (0).
      * 
      * @returns {boolean}
-     *      True if all cursor position meets the following criteria: 
-     *          not first row, cursor position on start of the row and 
-     *          content from previous row is wrapped;
-     *      False otherwise
+     *      True the cursor is not positioned in the first row but at the start 
+     *      of a row; false otherwise
      */
-    const isStartOfRowAndWrappedFromPreviousLine = () => 
-        terminalInstance.buffer.active.cursorX === 0 &&
-        terminalInstance.buffer.active.cursorY > 0 &&
-        (terminalInstance.buffer.active.getLine(
-            terminalInstance.buffer.active.cursorY)?.isWrapped??false);
+    function isStartOfRowExceptFirstRow() {
+        return terminalInstance.buffer.active.cursorX === 0 &&
+            terminalInstance.buffer.active.cursorY > 0;
+    }
+       
 
+    /**
+     * Calculates if the cursor is positioned in a row that contains
+     * wrapped input.
+     * 
+     * @returns {boolean}
+     *      True if the current input line is wrapped, false otherwise
+     */
+    function inputIsWrapped() {
+        return terminalInstance.buffer.active.getLine(
+            terminalInstance.buffer.active.cursorY)?.isWrapped ?? false;
+    } 
+    
+    /**
+     * Calculates if the cursor is positioned in end of the line
+     * 
+     * @returns {boolean}
+     *      True if cursor is positioned on the end, false otherwise
+     */
+    function cursorIsEndOfLine() {
+        return terminalInstance.cols === terminalInstance.buffer.active.cursorX;
+    }
+        
+
+    /**
+     * Calculates if each column in the row contains a character.
+     * 
+     * @returns {boolean}
+     *      True if each column contains a character, false otherwise
+     */
+    function eachColumnInTheRowIsOccupied() {
+        return terminalInstance.buffer.active.getLine(
+            terminalInstance.buffer.active.cursorY)?.length ===
+            terminalInstance.cols;
+    }
+       
+    /**
+     * Deletes the character above the cursor.
+     */
+    function deleteCharacter() {
+        terminalInstance.write('\x1B[1P');
+    }
+    
     terminalInstance.onData(data => {
         switch (data) {
             case '\r': // enter
                 terminalInstance.writeln('');
                 break;
             case '\u007F': // backspace
-                if (isStartOfRowAndWrappedFromPreviousLine()
-                ) {
+                if ((isStartOfRowExceptFirstRow() && inputIsWrapped())) {
+                    
                     let curLine = terminalInstance.buffer.active.getLine(
                         terminalInstance.buffer.active.cursorY);
+                    
                     if (curLine) {
                         terminalInstance.write(ansi.cursor.previousLine()
                             + ansi.cursor.forward(curLine?.length))
-                        terminalInstance.write('\x1B[1P');
+                        deleteCharacter();
                     }   
                 }
+                else if ((cursorIsEndOfLine() &&
+                    eachColumnInTheRowIsOccupied())) {
+                        deleteCharacter();
+                    }
                 else {
                     terminalInstance.write('\b \b');
                 }
@@ -78,8 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     terminalInstance.write(data);
                 }
         }
-
-        
     });
 
     let containerElement = document.getElementById(containerId);
