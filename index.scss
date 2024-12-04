@@ -1,0 +1,15 @@
+.terminal {
+    &-wrapper{
+        display: block;
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: #fcfcfc;
+    }
+
+    &-container {
+        box-sizing: border-box;
+    }
+}
