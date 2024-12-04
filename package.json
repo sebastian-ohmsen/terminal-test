@@ -13,6 +13,10 @@
     "@xterm/addon-canvas": "^0.7.0",
     "@xterm/addon-webgl": "^0.18.0",
     "@xterm/xterm": "^5.5.0",
+    "ansi-escape-sequences": "^6.2.3"
+  },
+  "devDependencies": {
+    "sass-embedded": "^1.81.1",
     "vite": "^6.0.2",
     "vite-plugin-mkcert": "^1.17.6"
   }
