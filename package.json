@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@xterm/addon-canvas": "^0.7.0",
+    "@xterm/addon-fit": "^0.10.0",
     "@xterm/addon-webgl": "^0.18.0",
     "@xterm/xterm": "^5.5.0",
     "ansi-escape-sequences": "^6.2.3"

@@ -3,6 +3,7 @@ import './index.scss';
 import { Terminal } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
+import { FitAddon } from '@xterm/addon-fit';
 import ansi from 'ansi-escape-sequences';
 
 const containerId = 'terminal';
@@ -10,14 +11,15 @@ const containerId = 'terminal';
 document.addEventListener('DOMContentLoaded', () => {
 
     const terminalOptions = {
-        cols: 80,
-        rows: 32,
         /** @type import("@xterm/xterm").LogLevel */
-        logLevel: 'info'
+        logLevel: 'debug',
+        allowProposedApi: true
+        
     };
 
     
     const terminalInstance = new Terminal(terminalOptions);
+    const fitAddon = new FitAddon();
     
     /**
      * Calculates the position of the cursor. Check if the cursor is located
@@ -183,13 +185,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         canvasRenderer = undefined;
     };
-
+    
+    const resizeObserver = new ResizeObserver(() => {
+        fitAddon.fit();
+    });
+    
     if (containerElement) {
+        terminalInstance.loadAddon(fitAddon);
         terminalInstance.open(containerElement);
         setupWebGlRenderer();    
+        fitAddon.fit();
+        resizeObserver.observe(containerElement);
         console.log('terminal initiated');
     }
     else {
         console.log('unable to initiate terminal - no container element found');
     }
+
 });
