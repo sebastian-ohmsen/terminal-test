@@ -3,7 +3,6 @@ import './index.scss';
 import { Terminal } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
-import { FitAddon } from '@xterm/addon-fit';
 import { XTermResizeFitAddon } from './XtermResizeFitAddon';
 import ansi from 'ansi-escape-sequences';
 
@@ -20,7 +19,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
     const terminalInstance = new Terminal(terminalOptions);
-    const fitAddon = new FitAddon();
     const resizeAddon = new XTermResizeFitAddon(
         400,
         300,
@@ -192,16 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         canvasRenderer = undefined;
     };
-    
-    const resizeObserver = new ResizeObserver(() => {
-        fitAddon.fit();
-    });
+
     
     if (containerElement) {
         terminalInstance.open(containerElement);
         terminalInstance.loadAddon(resizeAddon);
         setupWebGlRenderer();    
-        resizeObserver.observe(containerElement);
         console.log('terminal initiated');
     }
     else {
