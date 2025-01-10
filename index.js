@@ -4,6 +4,7 @@ import { Terminal } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
 import { FitAddon } from '@xterm/addon-fit';
+import { XTermResizeFitAddon } from './XtermResizeFitAddon';
 import ansi from 'ansi-escape-sequences';
 
 const containerId = 'terminal';
@@ -20,6 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const terminalInstance = new Terminal(terminalOptions);
     const fitAddon = new FitAddon();
+    const resizeAddon = new XTermResizeFitAddon(
+        400,
+        300,
+        1024,
+        800
+    );
     
     /**
      * Calculates the position of the cursor. Check if the cursor is located
@@ -191,15 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     if (containerElement) {
-        terminalInstance.loadAddon(fitAddon);
         terminalInstance.open(containerElement);
+        terminalInstance.loadAddon(resizeAddon);
         setupWebGlRenderer();    
-        fitAddon.fit();
         resizeObserver.observe(containerElement);
         console.log('terminal initiated');
     }
     else {
         console.log('unable to initiate terminal - no container element found');
     }
-
 });
