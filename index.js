@@ -3,7 +3,8 @@ import './index.scss';
 import { Terminal } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
-import { XTermResizeFitAddon } from './XtermResizeFitAddon';
+// import { XTermResizeFitAddon } from './XtermResizeFitAddon';
+import { XtermResizeScaleAddon } from './XtermResizeScaleAddon';
 import ansi from 'ansi-escape-sequences';
 
 const containerId = 'terminal';
@@ -19,12 +20,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     
     const terminalInstance = new Terminal(terminalOptions);
-    const resizeAddon = new XTermResizeFitAddon(
-        400,
-        300,
-        1024,
-        800
-    );
+    // const resizeAddon = new XTermResizeFitAddon(
+    //     400,
+    //     300,
+    //     1024,
+    //     800
+    // );
+
+    const resizeAddon = new XtermResizeScaleAddon(
+        400, 1024
+    )
     
     /**
      * Calculates the position of the cursor. Check if the cursor is located
