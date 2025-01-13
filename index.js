@@ -27,9 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     //     800
     // );
 
-    const resizeAddon = new XtermResizeScaleAddon(
-        400, 1024
-    )
+    const resizeAddon = new XtermResizeScaleAddon(10);
     
     /**
      * Calculates the position of the cursor. Check if the cursor is located
