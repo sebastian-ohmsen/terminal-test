@@ -47,7 +47,6 @@ const calculateFontWidth = function calculateMinWidth(fontsize, fontFamily) {
         if (!('width' in metrics)) {
             throw new Error('Required font metrics not supported');
         }
-        console.log(metrics);
         return metrics.width;
     }
     throw new Error('Unable to use offscreen canvas for calculation');
@@ -102,21 +101,26 @@ function XtermResizeScaleAddon(minFontSize) {
 /**
  * Calculates the current terminal width without left and right padding
  *
- * @param {HTMLElement | undefined} element
- *      The terminal HTML element
+ * @param {Terminal} terminal
+ *      The terminal instance
  * @returns {number}
  *      Calculated width
  *
  */
-const calculateTargetWidth = function calculateTargetWidth(element) {
-    if (element) {
-        let targetWidth = element.clientWidth;
+const calculateTargetWidth = function calculateTargetWidth(terminal) {
+    if (terminal && terminal.element) {
+        let targetWidth = terminal.element.clientWidth;
         targetWidth -= parseFloat(
-            window.getComputedStyle(element).getPropertyValue('padding-left')
+            window
+                .getComputedStyle(terminal.element)
+                .getPropertyValue('padding-left')
         );
         targetWidth -= parseFloat(
-            window.getComputedStyle(element).getPropertyValue('padding-right')
+            window
+                .getComputedStyle(terminal.element)
+                .getPropertyValue('padding-right')
         );
+        targetWidth -= terminal._core.viewport.scrollBarWidth;
         return targetWidth;
     }
     throw new Error('Unable to calculate terminal width');
@@ -133,8 +137,7 @@ const calculateTargetWidth = function calculateTargetWidth(element) {
 const calculateScalingRatio = function calculateScalingRatio(terminal) {
     const canvasWidth =
         terminal._core._renderService.dimensions.css.canvas.width;
-    let targetWidth = calculateTargetWidth(terminal.element);
-    targetWidth -= terminal._core.viewport.scrollBarWidth;
+    let targetWidth = calculateTargetWidth(terminal);
     return targetWidth / canvasWidth;
 };
 
@@ -170,6 +173,8 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
         let addon = this;
         let resizeStarted = false;
         let inResize = false;
+
+        let lastMouseXPos = 0;
 
         /**
          * Calculates if the mouse is positioned over or near the right edge of
@@ -228,10 +233,17 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
             setWidth(Math.max(normWidth, addon.minWidth));
         };
 
+        /**
+         * Handler for mouse down events
+         * 
+         * @param {MouseEvent} ev 
+         *      Incoming event
+         */
         let mouseDownHandler = (ev) => {
             ev.stopPropagation();
             ev.preventDefault();
             resizeStarted = rightEdgeHit(ev.clientX, ev.clientY);
+            lastMouseXPos = ev.clientX;
         };
 
         wrapper.ownerDocument.addEventListener('mousedown', mouseDownHandler);
@@ -243,13 +255,21 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
             );
         });
 
+        /**
+         * Sets the new terminal font size
+         * @param {number} newSize
+         *      New font size 
+         */
         let setFontSize = function setFontSize(newSize) {
-            console.log(`set font size: ${newSize}`);
             terminal.options.fontSize = newSize;
         };
 
-        let mouseUpHandler = () => {
-            if (resizeStarted) {
+        /**
+         * Calculates and sets the best font size for the current available 
+         * terminal size.
+         */
+        let recalculateAndSetTerminalFont =
+            function recalculateAndSetTerminalFont() {
                 let calculatedFontSize = calculateFontSize(terminal);
                 if (calculatedFontSize <= addon.minFontSize) {
                     calculatedFontSize = addon.minFontSize;
@@ -257,19 +277,28 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
                 setFontSize(calculatedFontSize);
                 let newCanvasWidth =
                     terminal._core._renderService.dimensions.css.canvas.width;
-                const targetWidth = calculateTargetWidth(
-                    terminal.element
-                );
+                const targetWidth = calculateTargetWidth(terminal);
                 while (newCanvasWidth >= targetWidth) {
                     calculatedFontSize = calculatedFontSize - 1;
-                    setFontSize(calculatedFontSize);
                     if (calculatedFontSize < addon.minFontSize) {
                         break;
                     }
+                    setFontSize(calculatedFontSize);
                     newCanvasWidth =
                         terminal._core._renderService.dimensions.css.canvas
                             .width;
                 }
+            };
+
+        /**
+         * Handler for mouse up events
+         * 
+         * @param {MouseEvent} ev 
+         *      Incoming event
+         */
+        let mouseUpHandler = (ev) => {
+            if (resizeStarted && lastMouseXPos !== ev.clientX) {
+                recalculateAndSetTerminalFont(addon);
             }
             resizeStarted = false;
             inResize = false;
@@ -284,6 +313,12 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
             );
         });
 
+        /**
+         * Handler for mouse movements
+         * 
+         * @param {MouseEvent} ev 
+         *      Incoming event
+         */
         let mouseMoveHandler = (ev) => {
             if (!resizeStarted) {
                 if (rightEdgeHit(ev.clientX, ev.clientY)) {
@@ -315,7 +350,12 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
                 mouseMoveHandler
             );
         });
-    }
+
+        // hack to prevent canvas overlapping the scroll bar
+        let boundingRect = wrapper.getBoundingClientRect();
+        let width = boundingRect.width + terminal._core.viewport.scrollBarWidth;
+        setWidth(Math.max(width, addon.minWidth));
+    }    
 };
 
 /**
