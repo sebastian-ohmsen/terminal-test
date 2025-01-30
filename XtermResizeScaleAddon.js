@@ -29,6 +29,19 @@ const createResizeWrapper = function createResizeWrapper(element) {
 };
 
 /**
+ * Removes the resize wrapper element around the terminal
+ * 
+ * @param {HTMLDivElement} wrapper 
+ *      The wrapper element
+ */
+const removeResizeWrapper = function removeResizeWrapper(wrapper) {
+    // we assume that the terminal is always the first element of the wrapper
+    let terminalElement = wrapper.children[0];
+    wrapper.parentNode?.insertBefore(terminalElement, wrapper);
+    wrapper.remove();
+};
+
+/**
  * Calculates the width of a font for a given font size and family
  *
  * @param {number} fontsize
@@ -355,6 +368,8 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
         let boundingRect = wrapper.getBoundingClientRect();
         let width = boundingRect.width + terminal._core.viewport.scrollBarWidth;
         setWidth(Math.max(width, addon.minWidth));
+
+        this._onDispose.push(()=>removeResizeWrapper(wrapper))
     }    
 };
 
@@ -362,6 +377,7 @@ XtermResizeScaleAddon.prototype.activate = function activate(terminal) {
  * Clean up and release all resources
  */
 XtermResizeScaleAddon.prototype.dispose = function dispose() {
+    console.log(`on dispose: ${this._onDispose.length}`);
     this._onDispose.forEach((fn) => fn());
 };
 

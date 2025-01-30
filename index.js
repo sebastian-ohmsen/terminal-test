@@ -3,11 +3,24 @@ import './index.scss';
 import { Terminal } from '@xterm/xterm';
 import { WebglAddon } from '@xterm/addon-webgl';
 import { CanvasAddon } from '@xterm/addon-canvas';
-// import { XTermResizeFitAddon } from './XtermResizeFitAddon';
+import { XTermResizeFitAddon } from './XtermResizeFitAddon';
 import { XtermResizeScaleAddon } from './XtermResizeScaleAddon';
 import ansi from 'ansi-escape-sequences';
 
 const containerId = 'terminal';
+
+function setupFitAddon() {
+    return  new XTermResizeFitAddon(
+        400,
+        300,
+        1024,
+        800
+    );
+}
+
+function setupScaleAddon() {
+    return new XtermResizeScaleAddon(14);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -15,19 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
         /** @type import("@xterm/xterm").LogLevel */
         logLevel: 'debug',
         allowProposedApi: true
-        
     };
 
     
     const terminalInstance = new Terminal(terminalOptions);
-    // const resizeAddon = new XTermResizeFitAddon(
-    //     400,
-    //     300,
-    //     1024,
-    //     800
-    // );
-
-    const resizeAddon = new XtermResizeScaleAddon(10);
+    /** @type {XtermResizeScaleAddon | XTermResizeFitAddon} */
+    let terminalResizeAddon = setupScaleAddon();
     
     /**
      * Calculates the position of the cursor. Check if the cursor is located
@@ -197,11 +203,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (containerElement) {
         terminalInstance.open(containerElement);
-        terminalInstance.loadAddon(resizeAddon);
+        terminalInstance.loadAddon(terminalResizeAddon);
         setupWebGlRenderer();    
         console.log('terminal initiated');
     }
     else {
         console.log('unable to initiate terminal - no container element found');
     }
+
+    let switched = false;
+    let button = document.getElementById('change_resize');
+    if (button) {
+        button.onclick = () => {
+            terminalResizeAddon.dispose();
+            if (switched) {
+                terminalInstance.resize(80, 24);
+                terminalResizeAddon = setupScaleAddon();
+            }
+            else {
+                terminalResizeAddon = setupFitAddon();
+            }
+            terminalInstance.loadAddon(terminalResizeAddon);
+            switched = !switched;
+        }
+}
 });

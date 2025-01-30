@@ -82,6 +82,20 @@ const createResizeWrapper = function createResizeWrapper(element) {
 };
 
 /**
+ * Removes the resize wrapper element around the terminal
+ * 
+ * @param {HTMLDivElement} wrapper 
+ *      The wrapper element
+ */
+const removeResizeWrapper = function removeResizeWrapper(wrapper) {
+    // we assume that the terminal is always the first element of the wrapper
+    let terminalElement = wrapper.children[0];
+    wrapper.parentNode?.insertBefore(terminalElement, wrapper);
+    wrapper.remove();
+};
+ 
+
+/**
  * Use the addon on the given terminal
  *
  * @param {Terminal} terminal
@@ -298,6 +312,8 @@ XTermResizeFitAddon.prototype.activate = function activate(terminal) {
         addon._onDispose.push(() => {
             fitAddon.dispose();
         });
+
+        this._onDispose.push(() => removeResizeWrapper(wrapper));
     }
 };
 
